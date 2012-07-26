@@ -125,6 +125,17 @@ class ncep_server {
   }
   
   inputrc { 'sflops':
-    home => '/home/sflops',
+    home    => '/home/sflops',
+    require => User['sflops'],
   }
+
+  user { 'sflops':
+    ensure     => present,
+    uid        => '1000',
+    gid        => '1000',
+    shell      => '/bin/bash',
+    home       => '/home/sflops',
+    managehome => true,
+  }
+
 }
