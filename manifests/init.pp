@@ -20,80 +20,72 @@ define pip($ensure = installed) {
 
 class ncep_server {
 
-  package { 'libfreetype6-dev':
-    ensure => present,
+  package {
+    'libfreetype6-dev': ensure => present;
+    'libpng12-dev': ensure => present;
+    'python': ensure => present;
+    'python-dev': ensure => present;
+    'python-virtualenv': ensure => present;
+    'python-pip': ensure => present;
+    'python-numpy': ensure => installed;
+    'python-matplotlib': ensure => installed;
+    'python-matplotlib-data': ensure => installed;
+    'python-mpltoolkits.basemap': ensure => installed;
+    'python-mpltoolkits.basemap-data': ensure => installed;
+    'python-tables': ensure => installed;
+    'python-numexpr': ensure => installed;
+    'python-scipy': ensure => installed;
+    'libreadline-dev': ensure => installed;
+    'fort77': ensure => installed;
+    'gfortran': ensure => installed;
+    'bison': ensure => installed;
+    'flex': ensure => installed;
   }
 
-  package { 'libpng12-dev':
-    ensure => present,
-  }
-
-  package { 'python': 
-    ensure => present,
-  }
-
-  package { 'python-dev': 
-    ensure => present,
-  }
-
-  package { 'python-virtualenv': 
-    ensure => present,
-  }
-
-  package { 'python-pip': 
-    ensure => present,
-  }
-
-  package { 'python-numpy':
-    ensure => installed,
-  }
-
-  package { 'python-matplotlib':
-    ensure => installed,
-  }
-
-  package { 'python-matplotlib-data':
-    ensure => installed,
-  }
-
-  package { 'python-mpltoolkits.basemap':
-    ensure => installed,
-  }
-
-  package { 'python-mpltoolkits.basemap-data':
-    ensure => installed,
-  }
-
-  package { 'python-tables':
-    ensure => installed,
-  }
-
-  package { 'python-numexpr':
-    ensure => installed,
-  }
-
-  package { 'python-scipy':
-    ensure => installed,
-  }
-
+  exec { 'ldconfig': 
+    command     => '/sbin/ldconfig',
+    refreshonly => true, 
+  } 
+  
   package { 'zlib':
     provider => dpkg,
     ensure   => present,
     source   => "/etc/puppet/modules/ncep_server/files/zlib_1.2.7-1_amd64.deb",
+    notify   => Exec['ldconfig'],
+  }
+
+  package { 'szip':
+    provider => dpkg,
+    ensure   => present,
+    source   => "/etc/puppet/modules/ncep_server/files/szip_2.1-1_amd64.deb",
+    notify   => Exec['ldconfig'],
+  }
+
+  package { 'hdf4':
+    provider => dpkg,
+    ensure   => present,
+    source   => "/etc/puppet/modules/ncep_server/files/hdf_4.2.7-1_amd64.deb",
+    require  => [
+                 Package['fort77'], Package['gfortran'], Package['bison'],
+                 Package['flex'], Package['szip'],
+                ],
+    notify   => Exec['ldconfig'],
   }
 
   package { 'hdf5':
     provider => dpkg,
     ensure   => present,
     source   => "/etc/puppet/modules/ncep_server/files/hdf5_1.8.9-1_amd64.deb",
-    require  => Package['zlib'],
+    require  => [Package['zlib'], Package['szip']],
+    notify   => Exec['ldconfig'],
   }
 
   package { 'netcdf':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/netcdf_4.1.3-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/netcdf_4.2.1-1_amd64.deb",
     require  => Package['hdf5'],
+    notify   => Exec['ldconfig'],
   }
 
   pip { 'netcdf4':
@@ -101,12 +93,46 @@ class ncep_server {
     require => [Package['python-numpy'], Package['netcdf']],
   }
   
-  exec { '/sbin/ldconfig': 
-    refreshonly => true, 
-    alias       => 'ldconfig', 
-    subscribe   => Package['netcdf'],
-  } 
-  
+  package { 'libdap':
+    provider => dpkg,
+    ensure   => present,
+    source   => "/etc/puppet/modules/ncep_server/files/libdap-3.11.3-1_amd64.deb",
+    require  => Package['netcdf'],
+    notify   => Exec['ldconfig'],
+  }
+
+  file { 'ld-bes.conf':
+    path    => '/etc/ld.so.conf.d/bes.conf',
+    ensure  => file,
+    mode    => 0644,
+    content => '/usr/local/lib/bes\n',
+    notify   => Exec['ldconfig'],
+  }
+    
+  package { 'bes':
+    provider => dpkg,
+    ensure   => present,
+    source   => "/etc/puppet/modules/ncep_server/files/bes-3.10.2-1_amd64.deb",
+    require  => Package['libdap'],
+    notify   => File['ld-bes.conf'],
+  }
+
+  package { 'dap-server':
+    provider => dpkg,
+    ensure   => present,
+    source   => "/etc/puppet/modules/ncep_server/files/dap-server_4.1.2-1_amd64.deb",
+    require  => Package['bes'],
+    notify   => Exec['ldconfig'],
+  }
+
+  package { 'netcdf-handler':
+    provider => dpkg,
+    ensure   => present,
+    source   => "/etc/puppet/modules/ncep_server/files/netcdf-handler_3.10.1-1_amd64.deb",
+    require  => Package['dap-server'],
+    notify   => Exec['ldconfig'],
+  }
+
   define inputrc ($user = $title, $home) {
     file { "$home/.inputrc":
       ensure  => file,
