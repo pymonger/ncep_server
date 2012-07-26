@@ -79,20 +79,20 @@ class ncep_server {
   package { 'zlib':
     provider => dpkg,
     ensure   => present,
-    source   => "puppet:///modules/ncep_server/zlib_1.2.7-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/zlib_1.2.7-1_amd64.deb",
   }
 
   package { 'hdf5':
     provider => dpkg,
     ensure   => present,
-    source   => "puppet:///modules/ncep_server/hdf5_1.8.9-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/hdf5_1.8.9-1_amd64.deb",
     require  => Package['zlib'],
   }
 
   package { 'netcdf':
     provider => dpkg,
     ensure   => present,
-    source   => "puppet:///modules/ncep_server/netcdf_4.1.3-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/netcdf_4.1.3-1_amd64.deb",
     require  => Package['hdf5'],
   }
 
