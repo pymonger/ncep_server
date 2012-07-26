@@ -76,7 +76,9 @@ class ncep_server {
     provider => dpkg,
     ensure   => present,
     source   => "/etc/puppet/modules/ncep_server/files/hdf5_1.8.9-1_amd64.deb",
-    require  => [Package['zlib'], Package['szip']],
+    require  => [
+                 Package['zlib'], Package['szip'], Package['hdf4'],
+                ],
     notify   => Exec['ldconfig'],
   }
 
