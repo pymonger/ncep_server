@@ -129,6 +129,11 @@ class ncep_server {
     require => User['sflops'],
   }
 
+  inputrc { 'gdgps':
+    home    => '/home/gdgps',
+    require => User['gdgps'],
+  }
+
   user { 'sflops':
     ensure     => present,
     uid        => '1000',
@@ -136,6 +141,21 @@ class ncep_server {
     shell      => '/bin/bash',
     home       => '/home/sflops',
     managehome => true,
+  }
+
+  user { 'gdgps':
+    ensure     => present,
+    uid        => '1001',
+    gid        => '1001',
+    shell      => '/bin/bash',
+    home       => '/home/gdgps',
+    managehome => true,
+    require    => Group['gdgps'],
+  }
+
+  group { 'gdgps':
+    ensure     => present,
+    gid        => '1001',
   }
 
 }
