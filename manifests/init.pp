@@ -98,7 +98,7 @@ class ncep_server {
   package { 'libdap':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/libdap-3.11.3-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/libdap_3.11.3-1_amd64.deb",
     require  => Package['netcdf'],
     notify   => Exec['ldconfig'],
   }
@@ -114,7 +114,7 @@ class ncep_server {
   package { 'bes':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/bes-3.10.2-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/bes_3.10.2-1_amd64.deb",
     require  => Package['libdap'],
     notify   => File['ld-bes.conf'],
   }
