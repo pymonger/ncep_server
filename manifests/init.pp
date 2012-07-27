@@ -84,6 +84,17 @@ class ncep_server {
 
 
   #####################################################
+  # apt-get update before installing packages
+  #####################################################
+
+  exec { "apt-update":
+    command     => "/usr/bin/apt-get update",
+    refreshonly => true;
+  }
+  Exec["apt-update"] -> Package <| |>
+
+
+  #####################################################
   # install packages
   #####################################################
 
