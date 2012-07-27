@@ -224,7 +224,8 @@ class ncep_server {
     hasstatus => true,
     require => [
                 File['/etc/init.d/besctl'], 
-                File['/usr/local/etc/bes/bes.conf']
+                File['/usr/local/etc/bes/bes.conf'],
+                File['/usr/local/var/run/bes'],
                ],
   }
 
