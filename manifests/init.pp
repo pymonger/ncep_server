@@ -400,6 +400,14 @@ class ncep_server {
     require => Service['tomcat6'],
   }
 
+  #####################################################
+  # use pip to install supervisor
+  #####################################################
+
+  pip { 'supervisor':
+    ensure  => installed,
+  }
+
 }
 
 
