@@ -188,8 +188,9 @@ class ncep_server {
   }
 
   file { '/etc/init.d/besctl':
-    ensure => link,
-    source => '/usr/local/bin/besctl',
+    ensure  => file,
+    mode    => 0755,
+    source  => 'puppet:///modules/ncep_server/besctl',
     require => Package['bes'],
   }
 
@@ -207,6 +208,15 @@ class ncep_server {
     require => Package['bes'],
   }
     
+  file { ['/usr/local/var',
+          '/usr/local/var/run',
+          '/usr/local/var/run/bes']:
+    ensure => directory,
+    owner  => 'root',
+    group  => 'gdgps',
+    mode   => 0775,
+  }
+
   service { 'besctl':
     ensure => running,
     enable => true,
@@ -225,6 +235,12 @@ class ncep_server {
     require => Package['tomcat6'],
   }
 
+  file { ['/var/lib/tomcat6/content',
+          '/var/lib/tomcat6/content/opendap',
+          '/var/lib/tomcat6/content/opendap/logs']:
+    ensure => directory,
+  }
+
   service { 'tomcat6':
     ensure => running,
     enable => true,
@@ -232,7 +248,20 @@ class ncep_server {
     hasstatus => true,
     require => [
                 File['opendap'],
+                File['/var/lib/tomcat6/content/opendap/logs'],
                ],
+  }
+
+  file { '/var/lib/tomcat6/content/opendap/olfs.xml':
+    ensure => link,
+    target => '/var/lib/tomcat6/webapps/opendap/initialContent/olfs.xml',  
+    require => Service['tomcat6'],
+  }
+
+  file { '/var/lib/tomcat6/content/opendap/catalog.xml':
+    ensure => link,
+    target => '/var/lib/tomcat6/webapps/opendap/initialContent/catalog.xml',  
+    require => Service['tomcat6'],
   }
 
   define inputrc ($user = $title, $home) {

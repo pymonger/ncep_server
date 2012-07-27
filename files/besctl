@@ -1,0 +1,397 @@
+#!/bin/sh
+
+prefix=/usr/local
+if [ "$prefix" = "NONE" ]
+then
+    prefix=/usr/local
+fi
+
+exec_prefix=${prefix}
+localstatedir=${prefix}/var
+sysconfdir=${prefix}/etc
+bindir=${exec_prefix}/bin
+
+if [ ! -f ${bindir}/besdaemon ]
+then
+    echo "BES does not appear to be installed in ${bindir}"
+    exit 1
+fi
+
+piddir=${localstatedir}/run/bes
+pidfile=${piddir}/bes.pid
+
+###########################################################################
+#
+# Attempts to start the BES
+#
+#..........................................................................
+startBES()
+{
+    echo "Starting the BES"
+
+    findRunningBES
+    if test $BES_RUNNING
+    then
+        echo "The BES is already running."
+    else
+	canWritePid
+	if test $WRITE_PID
+	then
+	    "${bindir}"/besdaemon $otherArgs
+	    retval=$?
+	    if test $retval != 0
+	    then
+		echo "FAILED: The BES daemon did not appear to start"
+		exit $retval
+	    else
+		sleep 1
+		findRunningBES
+		if test $BES_RUNNING
+		then
+		    echo "OK: Successfully started the BES"
+		    cat "${pidfile}"
+		else
+		    echo "FAILED: The BES daemon did not appear to start"
+		    exit 1
+		fi
+	    fi
+	fi
+    fi
+}
+
+###########################################################################
+#
+# Attempts to stop the BES
+#
+#..........................................................................
+stopBES()
+{
+    echo "Shutting down the BES daemon"
+    findRunningBES
+    if test $BES_RUNNING
+    then
+	if test $BES_PID
+	then
+	    kill $BES_PID
+	    retval=$?
+	    if test $retval != 0
+	    then
+		echo "Unable to stop the BES, PID: $BES_PID"
+		exit $retval
+	    fi
+	    sleep 1
+	    findRunningBES
+	    if test $BES_RUNNING
+	    then
+		echo "Unable to stop the BES, PID: $BES_PID"
+		exit 1
+	    else
+		echo "Successfully shut down the BES"
+	    fi
+	else
+	    echo "Not running, but pid = $BES_PID"
+	fi
+    else
+	echo "The BES daemon is not currently running"
+    fi
+}
+
+###########################################################################
+#
+# Attempt to restart the BES
+#
+#..........................................................................
+restartBES()
+{
+    stopBES
+    if test !$BES_RUNNING
+    then
+	startBES
+    fi
+}
+
+###########################################################################
+#
+# Attempts to locate a running BES by using the ps command to search the 
+# process stack for running instances of the besdaemon and beslistner 
+# programs. All of the PID are collected and cached in the environment
+# variable "BES_PID"
+#
+#..........................................................................
+findRunningBES()
+{
+    unset BES_RUNNING
+    
+    if test -f "$pidfile"
+    then
+	    BES_PID=`cat "$pidfile" | cut -d' ' -f2`
+	    BESDAEMON_PID=`$PS | grep $BES_PID | grep besdaemon | grep -v grep | awk '{print $2}'`
+	    if test -n "$BESDAEMON_PID"
+	    then
+	        BES_RUNNING=1
+	    else
+	        echo "BES PID file exists but process not running, cleaning up"
+	        /bin/rm -f  "$pidfile"
+
+	        BESDAEMON_PID=`$PS | grep besdaemon | grep -v grep | awk '{print $2}'`
+	        if test -n "$BESDAEMON_PID"
+	        then
+		       echo "BES seems to be running from a different location: $BESDAEMON_PID"
+	        fi
+	    fi
+    else
+        getAllBESPIDS
+	    if test -n "$BES_PIDS"
+	    then
+	       echo "There are several different BES processes running: $BES_PIDS"
+	    fi
+    fi
+}
+
+###########################################################################
+# 
+# Gather all of the pids for the besdaemon and listeners.
+#
+getAllBESPIDS()
+{
+    BES_PIDS=""
+    for i in `$PS | grep 'besdaemon\|beslistener' | grep -v grep | grep -v besctl | awk '{print $2}'`
+    do
+        if test -z "$BES_PIDS"
+        then
+            BES_PIDS=$i
+        else
+            BES_PIDS="$BES_PIDS $i"
+        fi
+    done
+}
+
+###########################################################################
+#
+# Attempts to determine if the system is using the UCB or System V version 
+# of the ps command.
+#
+#..........................................................................
+checkPS()
+{
+
+# According to the OS/X man page, the UCB version of ps should not use the 
+# dash in front of its options. On OS/X this prints a warning. jimg 10/29/07
+UCB_PS="ps axww -o user,pid,command"
+SYSTEM_V_PS="ps -ef -o user,pid,comm"
+
+# I switched so that System V is tested first. This is because OS/X supports
+# both syntaxes in a somewhat odd way and mentions that support for UCB might
+# be removed in the future. jimg 10/29/07
+
+$UCB_PS > /dev/null 2>&1
+if test $? -eq 0
+then 
+    PS=$UCB_PS
+    #echo "Using UCB ps syntax"
+else
+    $SYSTEM_V_PS > /dev/null 2>&1
+    if test $? -eq 0
+    then 
+	PS=$SYSTEM_V_PS
+	#echo "Using System V ps syntax"
+    else
+        echo "Cannot determine a functional version of \"ps\" command. Exiting."
+        exit 1
+    fi
+fi
+
+    if test $verbose
+    then
+        echo "PS command: $PS"
+    fi
+}
+
+###########################################################################
+#
+# Check to see if user can write the pid file
+#
+#..........................................................................
+canWritePid()
+{
+    unset WRITE_PID
+
+    # Make sure we can write the pid file! jhrg 3/31/2007
+    if test ! -x ${piddir} -o ! -w ${piddir}
+    then
+	echo "The besctl command cannot write to ${piddir}."
+	echo "Check that the directory exists and that the user running"
+	echo "besctl has write permissions for it."
+	exit 1
+    else
+	WRITE_PID=1
+    fi
+}
+
+usage()
+{
+    cat <<EOF
+
+USAGE: besctl (help|start|stop|restart|status|pids|kill) [options]
+       where [options] are passed to besdaemon; see besdaemon -h except
+       for the 'verbose' (-V) option that controls the script's output.
+EOF
+}
+
+what=$1
+shift
+otherArgs=$*
+
+###########################################################################
+#
+# Check for the BES command line options
+# Any changes made here also need to be changed in daemon.cc and
+# ServerApp.cc
+#
+#..........................................................................
+dashi="no"
+dashc="no"
+dashr="no"
+verbose=""
+args=`getopt hvsd:c:p:u:i:r: $*`
+if [ $? != 0 ]
+then
+    echo 'Usage: ...'
+    exit 2
+fi
+set -- $args
+
+for param
+do
+    case $param in
+	-i)
+	    prefix=$2
+	    piddir=${prefix}/var/run/bes
+	    pidfile=${piddir}/bes.pid
+	    bindir=${prefix}/bin
+	    dashi="yes"
+	    # otherArgs="$otherArgs $param $2"
+	    shift
+	    shift
+	    ;;
+	-c)
+	    dashc=$2
+	    #otherArgs="$otherArgs $param $2"
+	    shift
+	    shift
+	    ;;
+	-r)
+	    dashr=$2
+	    pidfile=${2}/bes.pid
+	    #otherArgs="$otherArgs $param $2"
+	    shift
+	    shift
+	    ;;
+	-v)
+	    verbose="yes"
+	    shift
+	    ;;
+	-d|-p|-u)
+	    #otherArgs="$otherArgs $param $2"
+	    shift
+	    shift
+	    ;;
+	-h|-v|-s)
+	    #otherArgs="$otherArgs $param"
+	    shift
+	    ;;
+	--)
+	    #otherArgs="$otherArgs $*"
+	    shift
+	    break;;
+    esac
+done
+
+checkPS
+
+if test $verbose
+then
+    echo "BES install directory: ${prefix}"
+fi
+
+if test "$dashi" = "no"
+then
+    otherArgs="${otherArgs} -i ${prefix}"
+fi
+
+if test "$dashc" = "no"
+then
+    if test $verbose
+    then
+        echo "BES configuration file: ${sysconfdir}/bes/bes.conf"
+    fi
+    otherArgs="${otherArgs} -c ${sysconfdir}/bes/bes.conf"
+else
+    if test $verbose
+    then
+        echo "BES configuration file: $dashc"
+    fi
+fi
+
+if test "$dashr" = "no"
+then
+    otherArgs="${otherArgs} -r ${piddir}"
+fi
+
+if test $verbose
+then
+    echo "Arguments to pass to the BES: $otherArgs"
+fi
+
+
+case $what in
+help)
+    "${bindir}"/beslistener $otherArgs -h
+    retval=$?
+    if test $retval != 0
+    then
+        echo "FAILED: The BES listener failed to return help information"
+        exit $retval
+    fi
+    usage
+    ;;
+stop)
+    stopBES
+    ;;
+start)
+    startBES
+    ;;
+restart)
+    restartBES
+    ;;
+status)
+    if test ! -f "${pidfile}"
+    then
+	echo "Could not find the BES PID file"
+        exit 3 #need this for puppet to detect status
+    else
+        echo "The BES daemon is currently running"
+        cat "${pidfile}"
+    fi
+    ;;
+pids)
+    getAllBESPIDS
+    echo "The current BES processes are: $BES_PIDS"
+    ;;
+kill)
+    getAllBESPIDS
+    if test $verbose
+    then
+        echo "Removing all BES processes"
+    fi
+    kill -KILL $BES_PIDS
+    if test -f "${pidfile}"
+    then
+        /bin/rm -f ${pidfile}
+    fi
+    ;;   
+*)
+    usage
+    ;;
+esac
+
