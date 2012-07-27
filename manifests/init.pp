@@ -42,20 +42,14 @@ define inputrc ($user = $title, $home) {
   
 
 #####################################################
-# require apt-get update before adding packages
+# require apt-get update before adding packages by
+# adding this class to the "pre" stage (see bottom)
 #####################################################
 
 class apt {
   exec { "apt-update":
     command => "/usr/bin/apt-get update"
   }
-
-  # Ensure apt is setup before running apt-get update
-  Apt::Key <| |> -> Exec["apt-update"]
-  Apt::Source <| |> -> Exec["apt-update"]
-
-  # Ensure apt-get update has been run before installing any packages
-  Exec["apt-update"] -> Package <| |>
 }
 
 
@@ -406,4 +400,26 @@ class ncep_server {
     require => Service['tomcat6'],
   }
 
+}
+
+
+#####################################################
+# set stages
+#####################################################
+
+node 'default' {
+  # define stages
+  stage {
+    'pre' : ;
+    'post': ;
+  }
+
+  # specify stage that each class belongs to;
+  # if not specified, they belong to Stage[main]
+  class {
+    'apt':         stage => 'pre';
+  }
+
+  # stage order
+  Stage['pre'] -> Stage[main] -> Stage['post']
 }
