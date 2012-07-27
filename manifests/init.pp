@@ -223,8 +223,10 @@ class ncep_server {
     hasrestart => true,
     hasstatus => true,
     require => [
+                Package['bes'], 
                 File['/etc/init.d/besctl'], 
                 File['/usr/local/etc/bes/bes.conf'],
+                File['/usr/local/etc/bes/modules/dap.conf'],
                 File['/usr/local/var/run/bes'],
                ],
   }
