@@ -127,6 +127,8 @@ class ncep_server {
     'tomcat6-common': ensure => installed;
     'tomcat6-admin': ensure => installed;
     'tomcat6-docs': ensure => installed;
+    'libblas-dev': ensure => installed;
+    'liblapack-dev': ensure => installed;
   }
 
 
