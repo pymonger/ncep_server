@@ -42,6 +42,24 @@ define inputrc ($user = $title, $home) {
   
 
 #####################################################
+# require apt-get update before adding packages
+#####################################################
+
+class apt {
+  exec { "apt-update":
+    command => "/usr/bin/apt-get update"
+  }
+
+  # Ensure apt is setup before running apt-get update
+  Apt::Key <| |> -> Exec["apt-update"]
+  Apt::Source <| |> -> Exec["apt-update"]
+
+  # Ensure apt-get update has been run before installing any packages
+  Exec["apt-update"] -> Package <| |>
+}
+
+
+#####################################################
 # ncep_server class
 #####################################################
 
@@ -81,17 +99,6 @@ class ncep_server {
     home    => "/home/$user",
     require => User[$user],
   }
-
-
-  #####################################################
-  # apt-get update before installing packages
-  #####################################################
-
-  exec { "apt-update":
-    command     => "/usr/bin/apt-get update",
-    refreshonly => true;
-  }
-  Exec["apt-update"] -> Package <| |>
 
 
   #####################################################
