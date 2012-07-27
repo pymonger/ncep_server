@@ -239,6 +239,7 @@ class ncep_server {
           '/var/lib/tomcat6/content/opendap',
           '/var/lib/tomcat6/content/opendap/logs']:
     ensure => directory,
+    require => Package['tomcat6'],
   }
 
   service { 'tomcat6':
