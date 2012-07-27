@@ -1,7 +1,9 @@
 ncep_server
 ===========
 
-Puppet module to install HDF5, NetCDF4, numpy, scipy, netcdf4, and various other packages on Ubuntu 12.04.
+Puppet module to install Hyrax (OPeNDAP) server on Ubuntu 12.04.
+It includes HDF4, HDF5, NetCDF4, numpy, matplotlib, basemap,
+scipy, and various other scientific packages.
 
 Installation
 ------------
