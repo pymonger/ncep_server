@@ -40,6 +40,14 @@ class ncep_server {
     'gfortran': ensure => installed;
     'bison': ensure => installed;
     'flex': ensure => installed;
+    'libxml2-dev': ensure => installed;
+    'uuid-dev': ensure => installed;
+    'libhdf4-dev': ensure => installed;
+    'libcurl4-openssl-dev': ensure => installed;
+    'tomcat6': ensure => installed;
+    'tomcat6-common': ensure => installed;
+    'tomcat6-admin': ensure => installed;
+    'tomcat6-docs': ensure => installed;
   }
 
   exec { 'ldconfig': 
@@ -61,23 +69,12 @@ class ncep_server {
     notify   => Exec['ldconfig'],
   }
 
-  package { 'hdf4':
-    provider => dpkg,
-    ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/hdf_4.2.7-1_amd64.deb",
-    require  => [
-                 Package['fort77'], Package['gfortran'], Package['bison'],
-                 Package['flex'], Package['szip'],
-                ],
-    notify   => Exec['ldconfig'],
-  }
-
   package { 'hdf5':
     provider => dpkg,
     ensure   => present,
     source   => "/etc/puppet/modules/ncep_server/files/hdf5_1.8.9-1_amd64.deb",
     require  => [
-                 Package['zlib'], Package['szip'], Package['hdf4'],
+                 Package['zlib'], Package['szip'], Package['libhdf4-dev'],
                 ],
     notify   => Exec['ldconfig'],
   }
@@ -103,8 +100,7 @@ class ncep_server {
     notify   => Exec['ldconfig'],
   }
 
-  file { 'ld-bes.conf':
-    path    => '/etc/ld.so.conf.d/bes.conf',
+  file { '/etc/ld.so.conf.d/bes.conf':
     ensure  => file,
     mode    => 0644,
     content => '/usr/local/lib/bes\n',
@@ -116,7 +112,7 @@ class ncep_server {
     ensure   => present,
     source   => "/etc/puppet/modules/ncep_server/files/bes_3.10.2-1_amd64.deb",
     require  => Package['libdap'],
-    notify   => File['ld-bes.conf'],
+    notify   => File['/etc/ld.so.conf.d/bes.conf'],
   }
 
   package { 'dap-server':
@@ -133,6 +129,110 @@ class ncep_server {
     source   => "/etc/puppet/modules/ncep_server/files/netcdf-handler_3.10.1-1_amd64.deb",
     require  => Package['dap-server'],
     notify   => Exec['ldconfig'],
+  }
+
+  package { 'freeform-handler':
+    provider => dpkg,
+    ensure   => present,
+    source   => "/etc/puppet/modules/ncep_server/files/freeform-handler_3.8.4-1_amd64.deb",
+    require  => Package['dap-server'],
+    notify   => Exec['ldconfig'],
+  }
+
+  package { 'hdf4-handler':
+    provider => dpkg,
+    ensure   => present,
+    source   => "/etc/puppet/modules/ncep_server/files/hdf4-handler_3.9.4-1_amd64.deb",
+    require  => Package['dap-server'],
+    notify   => Exec['ldconfig'],
+  }
+
+  package { 'hdf5-handler':
+    provider => dpkg,
+    ensure   => present,
+    source   => "/etc/puppet/modules/ncep_server/files/hdf5-handler_2.0.0-1_amd64.deb",
+    require  => Package['dap-server'],
+    notify   => Exec['ldconfig'],
+  }
+
+  package { 'fileout_netcdf':
+    provider => dpkg,
+    ensure   => present,
+    source   => "/etc/puppet/modules/ncep_server/files/fileout-netcdf_1.1.2-1_amd64.deb",
+    require  => Package['dap-server'],
+    notify   => Exec['ldconfig'],
+  }
+
+  package { 'gateway-module':
+    provider => dpkg,
+    ensure   => present,
+    source   => "/etc/puppet/modules/ncep_server/files/gateway-module_1.1.0-1_amd64.deb",
+    require  => [Package['dap-server'], Package['libcurl4-openssl-dev']],
+    notify   => Exec['ldconfig'],
+  }
+
+  package { 'xml_data-handler':
+    provider => dpkg,
+    ensure   => present,
+    source   => "/etc/puppet/modules/ncep_server/files/xml-data-handler_1.0.2-1_amd64.deb",
+    require  => Package['dap-server'],
+    notify   => Exec['ldconfig'],
+  }
+
+  package { 'csv-handler':
+    provider => dpkg,
+    ensure   => present,
+    source   => "/etc/puppet/modules/ncep_server/files/csv-handler_1.0.2-1_amd64.deb",
+    require  => Package['dap-server'],
+    notify   => Exec['ldconfig'],
+  }
+
+  file { '/etc/init.d/besctl':
+    ensure => link,
+    source => '/usr/local/bin/besctl',
+    require => Package['bes'],
+  }
+
+  file { '/usr/local/etc/bes/bes.conf':
+    ensure  => file,
+    mode    => 0644,
+    source  => 'puppet:///modules/ncep_server/bes.conf',
+    require => Package['bes'],
+  }
+    
+  file { '/usr/local/etc/bes/modules/dap.conf':
+    ensure  => file,
+    mode    => 0644,
+    source  => 'puppet:///modules/ncep_server/dap.conf',
+    require => Package['bes'],
+  }
+    
+  service { 'besctl':
+    ensure => running,
+    enable => true,
+    hasrestart => true,
+    hasstatus => true,
+    require => [
+                File['/etc/init.d/besctl'], 
+                File['/usr/local/etc/bes/bes.conf']
+               ],
+  }
+
+  file { 'opendap':
+    path => '/var/lib/tomcat6/webapps/opendap.war',
+    ensure => present,
+    source => 'puppet:///modules/ncep_server/opendap.war',
+    require => Package['tomcat6'],
+  }
+
+  service { 'tomcat6':
+    ensure => running,
+    enable => true,
+    hasrestart => true,
+    hasstatus => true,
+    require => [
+                File['opendap'],
+               ],
   }
 
   define inputrc ($user = $title, $home) {
