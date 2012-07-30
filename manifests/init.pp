@@ -129,6 +129,7 @@ class ncep_server {
     'tomcat6-docs': ensure => installed;
     'libblas-dev': ensure => installed;
     'liblapack-dev': ensure => installed;
+    'libxslt1-dev': ensure => installed;
   }
 
 
