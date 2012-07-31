@@ -130,6 +130,7 @@ class ncep_server {
     'libblas-dev': ensure => installed;
     'liblapack-dev': ensure => installed;
     'libxslt1-dev': ensure => installed;
+    'subversion': ensure => installed;
   }
 
 
