@@ -131,6 +131,7 @@ class ncep_server {
     'liblapack-dev': ensure => installed;
     'libxslt1-dev': ensure => installed;
     'subversion': ensure => installed;
+    'augeas-tools': ensure => installed;
   }
 
 
@@ -410,6 +411,36 @@ class ncep_server {
 
   pip { 'supervisor':
     ensure  => installed,
+  }
+
+  #####################################################
+  # mount VM shared folders
+  #####################################################
+
+  file { ['/data1',
+          '/data']:
+    ensure  => directory,
+    owner   => 'root',
+    group   => 'root',
+    mode    => 0755,
+  }
+
+  mount { '/data1':
+    ensure  => mounted,
+    device  => ".host:/data1",
+    atboot  => true,
+    fstype  => "vmhgfs",
+    options => "defaults",
+    require => File["/data1"],
+  }
+
+  mount { '/data':
+    ensure  => mounted,
+    device  => ".host:/data",
+    atboot  => true,
+    fstype  => "vmhgfs",
+    options => "defaults",
+    require => File["/data"],
   }
 
 }
