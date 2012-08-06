@@ -283,7 +283,6 @@ class ncep_server {
                 Package['hdf4-handler'],
                 Package['hdf5-handler'],
                 Package['fileout_netcdf'],
-                Package['gateway-module'],
                 Package['xml_data-handler'],
                 Package['csv-handler'],
                ],
