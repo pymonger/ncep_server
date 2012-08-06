@@ -132,6 +132,7 @@ class ncep_server {
     'libxslt1-dev': ensure => installed;
     'subversion': ensure => installed;
     'augeas-tools': ensure => installed;
+    'curl': ensure => installed;
   }
 
 
@@ -152,21 +153,21 @@ class ncep_server {
   package { 'zlib':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/zlib_1.2.7-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/zlib_1.2.7-1_${architecture}.deb",
     notify   => Exec['ldconfig'],
   }
 
   package { 'szip':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/szip_2.1-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/szip_2.1-1_${architecture}.deb",
     notify   => Exec['ldconfig'],
   }
 
   package { 'hdf5':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/hdf5_1.8.9-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/hdf5_1.8.9-1_${architecture}.deb",
     require  => [
                  Package['zlib'], Package['szip'], Package['libhdf4-dev'],
                 ],
@@ -176,7 +177,7 @@ class ncep_server {
   package { 'netcdf':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/netcdf_4.2.1-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/netcdf_4.2.1-1_${architecture}.deb",
     require  => Package['hdf5'],
     notify   => Exec['ldconfig'],
   }
@@ -200,77 +201,70 @@ class ncep_server {
   package { 'libdap':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/libdap_3.11.3-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/libdap_3.11.3-1_${architecture}.deb",
     require  => Package['netcdf'],
   }
 
   package { 'bes':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/bes_3.10.2-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/bes_3.10.2-1_${architecture}.deb",
     require  => Package['libdap'],
   }
 
   package { 'dap-server':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/dap-server_4.1.2-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/dap-server_4.1.2-1_${architecture}.deb",
     require  => Package['bes'],
   }
 
   package { 'netcdf-handler':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/netcdf-handler_3.10.1-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/netcdf-handler_3.10.1-1_${architecture}.deb",
     require  => Package['dap-server'],
   }
 
   package { 'freeform-handler':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/freeform-handler_3.8.4-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/freeform-handler_3.8.4-1_${architecture}.deb",
     require  => Package['dap-server'],
   }
 
   package { 'hdf4-handler':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/hdf4-handler_3.9.4-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/hdf4-handler_3.9.4-1_${architecture}.deb",
     require  => Package['dap-server'],
   }
 
   package { 'hdf5-handler':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/hdf5-handler_2.0.0-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/hdf5-handler_2.0.0-1_${architecture}.deb",
     require  => Package['dap-server'],
   }
 
   package { 'fileout_netcdf':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/fileout-netcdf_1.1.2-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/fileout-netcdf_1.1.2-1_${architecture}.deb",
     require  => Package['dap-server'],
-  }
-
-  package { 'gateway-module':
-    provider => dpkg,
-    ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/gateway-module_1.1.0-1_amd64.deb",
-    require  => [Package['dap-server'], Package['libcurl4-openssl-dev']],
   }
 
   package { 'xml_data-handler':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/xml-data-handler_1.0.2-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/xml-data-handler_1.0.2-1_${architecture}.deb",
     require  => Package['dap-server'],
   }
 
   package { 'csv-handler':
     provider => dpkg,
     ensure   => present,
-    source   => "/etc/puppet/modules/ncep_server/files/csv-handler_1.0.2-1_amd64.deb",
+    source   => "/etc/puppet/modules/ncep_server/files/csv-handler_1.0.2-1_${architecture}.deb",
     require  => Package['dap-server'],
   }
 
