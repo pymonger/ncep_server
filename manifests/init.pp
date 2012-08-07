@@ -269,6 +269,7 @@ class ncep_server {
     require  => Package['dap-server'],
   }
 
+
   #####################################################
   # create ld conf file for /usr/local/lib/bes  
   # and refresh cache
@@ -347,6 +348,7 @@ class ncep_server {
     require    => File['/usr/local/var/run/bes'],
   }
 
+
   #####################################################
   # ensure directories exist for opendap WAR and 
   # install opendap WAR to tomcat's webapps
@@ -399,6 +401,7 @@ class ncep_server {
     require => Service['tomcat6'],
   }
 
+
   #####################################################
   # use pip to install supervisor
   #####################################################
@@ -406,6 +409,7 @@ class ncep_server {
   pip { 'supervisor':
     ensure  => installed,
   }
+
 
   #####################################################
   # mount VM shared folders
