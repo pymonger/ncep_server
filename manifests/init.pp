@@ -74,6 +74,7 @@ class ncep_server {
     ensure     => present,
     uid        => '1002',
     gid        => '1002',
+    groups     => ['sudo'],
     shell      => '/bin/bash',
     home       => "/home/$user",
     managehome => true,
