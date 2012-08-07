@@ -403,6 +403,17 @@ class ncep_server {
 
 
   #####################################################
+  # soft-link NCEP GFS data to hyrax public directory
+  #####################################################
+
+  file { '/usr/local/share/hyrax/AtmData':
+    ensure => link,
+    target => "/home/$user/AtmData",
+    require => Service['tomcat6'],
+  }
+
+
+  #####################################################
   # use pip to install supervisor
   #####################################################
 
